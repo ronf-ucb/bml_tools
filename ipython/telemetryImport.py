@@ -1,9 +1,9 @@
 import numpy as np
-import scipy.integrate
+#import scipy.integrate
 
 def telemetryImport(filename):
     file = open(filename)
-    print "Importing ",filename
+    print "telemetryImport 9/27/14 v1.0 Importing ",filename
 
     S = TelemetryData()
     S.filename = file; #save filename with structure
@@ -84,38 +84,25 @@ def telemetryImport(filename):
     #Power calculation
     # i_m = (VBatt - BEMF)/R
     # V_m is just VBatt
-    #PowerR = np.abs((DCR/4096.0)*VBatt*(VBatt - RBEMF)/RMotor) # P = V_m i_m x duty cycle
-    #PowerL = np.abs((DCL/4096.0)*VBatt*(VBatt - LBEMF)/RMotor) # P = V_m i_m x duty cycle
-    # using motor duty cycle as 0-100%
-    S.PowerR = np.abs((S.DCR/100.0)*S.VBatt*(S.VBatt - S.RBEMF)/S.RMotor) # P = V_m i_m x duty cycle
-    S.PowerL = np.abs((S.DCL/100.0)*S.VBatt*(S.VBatt - S.LBEMF)/S.RMotor) # P = V_m i_m x duty cycle
 
-    S.Energy = np.zeros(len(S.VBatt))
-    S.EnergyL = np.zeros(len(S.VBatt))
-    S.EnergyR = np.zeros(len(S.VBatt))
-    # This is a terrible way to report the delta t for the file. This is why timestamps are recorded in microseconds.
-    # The average and standard deviation of all time differences should be stored. AP 9/26/2014
-    S.dt = (S.time[1] - S.time[0]) / 1000.0 # time in seconds
-    
-    print 'S.dt=', S.dt
-    #energy calculation
-    # This is an unnecessarily complicated way of integrating an array. Change to use trapz below. AP 9/26/2014
-    for i in range(1,len(S.VBatt)):
-        S.Energy[i] = S.Energy[i-1] + (S.PowerR[i] + S.PowerL[i]) * S.dt
-        
-    # code doesn't work - wrong length
-    #S.EnergyL = scipy.integrate.cumtrapz(S.PowerL, dx = S.dt)
-    #S.EnergyR = scipy.integrate.cumtrapz(S.PowerR, dx = S.dt)
-    #S.Energy = S.EnergyL + S.EnergyR
+
+    # using motor duty cycle as 0-100%
+    S.CurrentR = (np.abs(S.DCR)/100.0)*(np.sign(S.DCR)*S.VBatt - S.RBEMF)/S.RMotor # i_m_avg = i_m x duty cycle
+    S.CurrentL = (np.abs(S.DCL)/100.0)*(np.sign(S.DCL)*S.VBatt - S.LBEMF)/S.RMotor # i_m_avg = i_m x duty cycle
 
     # torque calculation
-    # This should include capability to have different resistances for each motor. AP 9/26/2014
-    S.TorqueR = (S.DCR/100.0)*S.Kt*(S.VBatt - S.RBEMF)/S.RMotor # \Tau = Kt i_m x duty cycle
-    S.TorqueL = (S.DCL/100.0)*S.Kt*(S.VBatt - S.LBEMF)/S.RMotor # \Tau = Kt i_m x duty cycle
-        
-    # Motor Voltage, R,L
-    S.VMotorR = S.VBatt*S.DCR
-    S.VMotorL = S.VBatt*S.DCL
+    S.TorqueR = S.Kt * S.CurrentR # \Tau = Kt i_m_avg
+    S.TorqueL = S.Kt * S.CurrentL # \Tau = Kt i_m_avg
+    
+    # Battery power calculations
+    S.PowerR = np.abs(S.VBatt* S.CurrentR) # P = V_m i_m_avg
+    S.PowerL = np.abs(S.VBatt* S.CurrentL) # P = V_m i_m_avg
+
+    S.Energy = np.zeros(len(S.VBatt))
+    #energy calculation, account that some time samples may be missing
+    # dt = (time[1] - time[0]) / 1000.0 # time in seconds
+    for i in range(1,len(S.VBatt)):
+        S.Energy[i] = S.Energy[i-1] + (S.PowerR[i] + S.PowerL[i]) * (S.time[i] - S.time[i-1])/1000.0
     
     S.numSamples = data.shape[0]
     print "Got",S.numSamples,"samples"
