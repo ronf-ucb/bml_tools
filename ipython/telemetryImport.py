@@ -38,7 +38,7 @@ def telemetryImport(filename):
     # unix: data = np.reshape(map(float,"".join(lines[8:]).replace('\r\n',',')[:-1].split(',')),(rows,columns))
     # windows
     data = np.reshape(map(float,"".join(lines[8:]).replace('\n',',')[:-1].split(',')),(rows,columns))
-
+    # print 'data=', data
     # Timestamps
     S.time = data[:,0]/1000.0
 
@@ -97,15 +97,16 @@ def telemetryImport(filename):
     # The average and standard deviation of all time differences should be stored. AP 9/26/2014
     S.dt = (S.time[1] - S.time[0]) / 1000.0 # time in seconds
     
-    #print 'dt=', dt
+    print 'S.dt=', S.dt
     #energy calculation
     # This is an unnecessarily complicated way of integrating an array. Change to use trapz below. AP 9/26/2014
-    #for i in range(1,len(VBatt)):
-    #    S.Energy[i] = Energy[i-1] + (S.PowerR[i] + S.PowerL[i]) * dt
+    for i in range(1,len(S.VBatt)):
+        S.Energy[i] = S.Energy[i-1] + (S.PowerR[i] + S.PowerL[i]) * S.dt
         
-    S.EnergyL = scipy.integrate.cumtrapz(S.PowerL, dx = S.dt, initial = 0)
-    S.EnergyR = scipy.integrate.cumtrapz(S.PowerR, dx = S.dt, initial = 0)
-    S.Energy = S.EnergyL + S.EnergyR
+    # code doesn't work - wrong length
+    #S.EnergyL = scipy.integrate.cumtrapz(S.PowerL, dx = S.dt)
+    #S.EnergyR = scipy.integrate.cumtrapz(S.PowerR, dx = S.dt)
+    #S.Energy = S.EnergyL + S.EnergyR
 
     # torque calculation
     # This should include capability to have different resistances for each motor. AP 9/26/2014
