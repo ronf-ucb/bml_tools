@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.integrate
 
 def telemetryImport(filename):
     file = open(filename)
@@ -102,8 +103,8 @@ def telemetryImport(filename):
     #for i in range(1,len(VBatt)):
     #    S.Energy[i] = Energy[i-1] + (S.PowerR[i] + S.PowerL[i]) * dt
         
-    S.EnergyL = np.trapz(S.PowerL, dx = S.dt)
-    S.EnergyR = np.trapz(S.PowerR, dx = S.dt)
+    S.EnergyL = scipy.integrate.cumtrapz(S.PowerL, dx = S.dt, initial = 0)
+    S.EnergyR = scipy.integrate.cumtrapz(S.PowerR, dx = S.dt, initial = 0)
     S.Energy = S.EnergyL + S.EnergyR
 
     # torque calculation
