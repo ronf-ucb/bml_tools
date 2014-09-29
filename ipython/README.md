@@ -34,6 +34,7 @@ Usage
 	3. Cell -> Run All.
 	4. Figures are in .png and can be saved from
 	 the web browser. Example plots are sensor-info.png and 	power-info.png
+Note that the .txt file can not have any characters after the last line.
 
 
 This notebook can be used to import telemetry data into an iPython notebook. This will be obsoleted very shortly.
